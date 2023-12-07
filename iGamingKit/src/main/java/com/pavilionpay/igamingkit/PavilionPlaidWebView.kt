@@ -2,7 +2,6 @@ package com.pavilionpay.igamingkit
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -23,8 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
-import com.plaid.link.Plaid
 import com.plaid.link.OpenPlaidLink
+import com.plaid.link.Plaid
 import com.plaid.link.event.LinkEventName
 import com.plaid.link.linkTokenConfiguration
 import com.plaid.link.result.LinkExit
@@ -39,24 +38,22 @@ import com.plaid.link.result.LinkSuccess
 @Composable
 fun PavilionPlaidWebView(
     url: String,
+    redirectUrl: String,
     onClose: () -> Unit,
 ) {
     require(url.isNotEmpty()) { stringResource(R.string.url_cannot_be_empty) }
 
     var isLoading by remember { mutableStateOf(true) }
     var linkTokenState by remember { mutableStateOf("") }
-    var successName by remember { mutableStateOf("") }
-    var errorName by remember { mutableStateOf("") }
     var jsNativeInterface by remember { mutableStateOf<JavaScriptInterface?>(null) }
 
     val context = LocalContext.current
     val webView = remember {
         setupWebView(
             url = url,
+            redirectUrl = redirectUrl,
             context = context,
             onLinkTokenStateChange = { linkTokenState = it },
-            onSuccessNameChange = { successName = it },
-            onErrorName = { errorName = it },
             onLoadingChange = { isLoading = it },
             onJsNativeInterfaceChange = { jsNativeInterface = it },
             onClose = onClose,
@@ -97,7 +94,6 @@ fun PavilionPlaidWebView(
     }
 
     Plaid.setLinkEventListener { event ->
-        Log.d("PPI", "Event $event")
         if (event.eventName == LinkEventName.HANDOFF) {
             linkTokenState = ""
         }
@@ -112,18 +108,12 @@ fun PavilionPlaidWebView(
     ) { result ->
         when (val plaidResult = plaidLink.parseResult(result.resultCode, result.data)) {
             is LinkSuccess -> {
-                Log.d("PPI", plaidResult.publicToken)
-                Log.d("PPI", plaidResult.metadata.metadataJson)
-                jsNativeInterface?.callJavascriptFunctionWithName(
-                    name = successName,
+                jsNativeInterface?.callOnAndroidSuccess(
                     metadata = plaidResult.metadata.metadataJson,
                 )
             }
             is LinkExit -> {
-                Log.d("PPI", plaidResult.error?.errorJson.toString())
-                plaidResult.error?.errorMessage?.let { Log.d("PPI", it) }
-                jsNativeInterface?.callJavascriptFunctionWithName(
-                    name = errorName,
+                jsNativeInterface?.callOnAndroidSuccess(
                     metadata = plaidResult.error?.errorJson,
                 )
             }
@@ -151,10 +141,10 @@ fun PavilionPlaidWebView(
  * interface is used to call Android functions from the WebView.
  *
  * @param url The URL to load in the WebView.
+ * @param redirectUrl The URL the pavilion pay process will redirect to. This is used to help ensure security and only a valid
+ * redirect is allowed.
  * @param context The context to use for creating the WebView.
  * @param onLinkTokenStateChange A callback function to be invoked when the link token state changes.
- * @param onSuccessNameChange A callback function to be invoked when the success name changes.
- * @param onErrorName A callback function to be invoked when the error name changes.
  * @param onLoadingChange A callback function to be invoked when the loading state changes.
  * @param onJsNativeInterfaceChange A callback function to be invoked when the JavaScript native interface changes.
  * @param onClose A callback function to be invoked when the WebView is closed.
@@ -162,28 +152,31 @@ fun PavilionPlaidWebView(
  */
 private fun setupWebView(
     url: String,
+    redirectUrl: String,
     context: Context,
     onLinkTokenStateChange: (String) -> Unit,
-    onSuccessNameChange: (String) -> Unit,
-    onErrorName: (String) -> Unit,
     onLoadingChange: (Boolean) -> Unit,
     onJsNativeInterfaceChange: (JavaScriptInterface?) -> Unit,
     onClose: () -> Unit,
 ) = WebView(context).apply {
     webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-            Log.d("PPI", "shouldOverrideUrlLoading ${request?.url}")
-            return false
+            return request?.let {
+                val comparisonUri = java.net.URI(redirectUrl)
+                !(
+                    request.url.scheme == comparisonUri.scheme &&
+                        request.url.host == comparisonUri.host &&
+                        request.url.path == comparisonUri.path
+                    )
+            } ?: true
         }
 
         override fun onPageFinished(view: WebView?, url: String?) {
             super.onPageFinished(view, url)
             // Inject JavaScript code
-            evaluateJavascript("""
-                window.addEventListener("message", (e) => {
-                    window.Android.consumeWindowMessage(e.name, e.data);
-                });
-            """, null
+            evaluateJavascript(
+                context.getString(R.string.event_listener_script),
+                null,
             )
             onLoadingChange(false)
         }
@@ -197,13 +190,11 @@ private fun setupWebView(
         webView = this,
         tokenHandler = { token, successCallback, errorCallBack ->
             onLinkTokenStateChange(token)
-            onSuccessNameChange(successCallback)
-            onErrorName(errorCallBack)
         },
         closeHandler = {
             onLinkTokenStateChange("")
             onClose()
-        }
+        },
     )
     addJavascriptInterface(jsNativeInterface, "Android")
     onJsNativeInterfaceChange(jsNativeInterface)

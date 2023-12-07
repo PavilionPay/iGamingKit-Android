@@ -22,7 +22,7 @@ internal class JavaScriptInterface(
      * This functions triggers the onAndroidSuccess function in the WebView to indicate the Plaid process has completed. The metadata
      * contains the bank details.
      */
-    fun callJavascriptFunctionWithName(name: String, metadata: String?) {
+    fun callOnAndroidSuccess(metadata: String?) {
         webView.post {
             webView.evaluateJavascript("\$onAndroidSuccess('$metadata')", null)
         }
