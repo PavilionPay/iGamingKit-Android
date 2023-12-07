@@ -21,5 +21,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "iGamingKit"
-include(":app")
 include(":iGamingKit")
