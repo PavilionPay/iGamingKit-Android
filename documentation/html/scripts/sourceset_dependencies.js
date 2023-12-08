@@ -1,0 +1,1 @@
+sourceset_dependencies = '{":iGamingKit:dokkaHtmlPartial/debug":[],":iGamingKit:dokkaHtmlPartial/main":[],":iGamingKit:dokkaHtmlPartial/release":[]}'

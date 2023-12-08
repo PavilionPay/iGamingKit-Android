@@ -10,6 +10,7 @@ pluginManagement {
         kotlin("plugin.serialization").version(kotlinVersion)
         id("com.android.library") version "8.2.0-rc03"
         id("org.jetbrains.kotlin.android") version "1.9.0"
+        id("org.jetbrains.dokka") version "1.9.10"
     }
 }
 dependencyResolutionManagement {
