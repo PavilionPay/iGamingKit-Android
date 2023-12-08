@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/iGamingKit-Android.iml" filepath="$PROJECT_DIR$/.idea/iGamingKit-Android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iGamingKit.iml" filepath="$PROJECT_DIR$/.idea/modules/iGamingKit.iml" />
     </modules>
   </component>
 </project>
