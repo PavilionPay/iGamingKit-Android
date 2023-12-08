@@ -33,6 +33,8 @@ import com.plaid.link.result.LinkSuccess
  * A composable function that displays a WebView and handles Plaid link events.
  *
  * @param url The URL to load in the WebView.
+ * @param redirectUrl The redirect URL used after completing a deposit or withdrawal. This is needed to help ensure security and
+ * only allow the expected redirect.
  * @param onClose A callback function to be invoked when the WebView is closed.
  */
 @Composable
