@@ -32,15 +32,19 @@ jobs:
       with:
         java-version: 17
 
-    - name: Build with Gradle
-      run: |
-         ./gradlew dokkaHtmlMultiModule
-#         echo "<script>window.location.href += \"/build/dokka/htmlMultiModule\"</script>" >/index.html;
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v1
+    - name: Cache dependencies
+      uses: actions/cache@v2
       with:
-       # Upload only docs directory
-       path: 'docs'
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Run Dokka
+      run: ./gradlew dokkaHtmlMultiModule
+
     - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v1
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/dokka/htmlMultiModule
