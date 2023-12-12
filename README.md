@@ -6,7 +6,7 @@ This repository contains a sample application that demonstrates integration and 
 
 Detailed instructions on how to integrate with the iGaming SDK for iOS can be found in our main documentation.
 
-API Reference can be found [here](https://pavilionpay.github.io/iGamingKit-Android/documentation/igamingkit/)
+API Reference can be found [here](https://pavilionpay.github.io/iGamingKit-Android/)
 
 ## Getting Started
 
