@@ -2,8 +2,11 @@ package com.pavilionpay.igamingkit
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Message
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
+import android.webkit.WebView.WebViewTransport
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -183,6 +186,18 @@ private fun setupWebView(
             onLoadingChange(false)
         }
     }
+    settings.setSupportMultipleWindows(true)
+
+    webChromeClient = object : WebChromeClient() {
+        override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean {
+            val popup = WebView(context)
+            view?.addView(popup)
+            (resultMsg?.obj as? WebViewTransport)?.webView = popup
+            resultMsg?.sendToTarget()
+            return true
+        }
+    }
+
     WebView.setWebContentsDebuggingEnabled(true)
     @SuppressLint("SetJavaScriptEnabled")
     settings.javaScriptEnabled = true
