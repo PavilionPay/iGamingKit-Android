@@ -2,6 +2,7 @@ package com.pavilionpay.igamingkit
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.os.Message
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -167,6 +168,11 @@ private fun setupWebView(
     webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
             return request?.let {
+                if (request.url.toString().startsWith("tel:")) {
+                    context.startActivity(Intent(Intent.ACTION_DIAL, request.url))
+                    return true
+                }
+                
                 val comparisonUri = java.net.URI(redirectUrl)
                 !(
                     request.url.scheme == comparisonUri.scheme &&
