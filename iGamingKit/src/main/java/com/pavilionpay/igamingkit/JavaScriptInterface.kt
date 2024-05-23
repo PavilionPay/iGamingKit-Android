@@ -51,7 +51,7 @@ internal class JavaScriptInterface(
      * @param linkToken The link token.
      */
     @JavascriptInterface
-    fun openLinkNative(linkToken: String) {
+    fun openLinkNative(linkToken: String, unused: String, unused2: String) {
         tokenHandler(linkToken)
     }
 }
