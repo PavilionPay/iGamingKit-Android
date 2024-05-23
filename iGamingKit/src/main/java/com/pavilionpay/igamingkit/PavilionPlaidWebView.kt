@@ -7,7 +7,6 @@ import android.os.Message
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
-import android.webkit.WebView.WebViewTransport
 import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +32,7 @@ import com.plaid.link.linkTokenConfiguration
 import com.plaid.link.result.LinkExit
 import com.plaid.link.result.LinkSuccess
 
+
 /**
  * A composable function that displays a WebView and handles Plaid link events.
  *
@@ -43,9 +43,10 @@ import com.plaid.link.result.LinkSuccess
  */
 @Composable
 fun PavilionPlaidWebView(
-    url: String,
-    redirectUrl: String,
-    onClose: () -> Unit,
+        url: String,
+        redirectUrl: String,
+        onFullScreenRequested: () -> Unit,
+        onClose: () -> Unit,
 ) {
     require(url.isNotEmpty()) { stringResource(R.string.url_cannot_be_empty) }
 
@@ -62,6 +63,7 @@ fun PavilionPlaidWebView(
             onLinkTokenStateChange = { linkTokenState = it },
             onLoadingChange = { isLoading = it },
             onJsNativeInterfaceChange = { jsNativeInterface = it },
+            onFullScreenRequested = onFullScreenRequested,
             onClose = onClose,
         )
     }
@@ -77,8 +79,8 @@ fun PavilionPlaidWebView(
         if (isLoading) {
             CircularProgressIndicator(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .zIndex(1f),
+                        .align(Alignment.Center)
+                        .zIndex(1f),
             )
         }
     }
@@ -118,11 +120,13 @@ fun PavilionPlaidWebView(
                     metadata = plaidResult.metadata.metadataJson,
                 )
             }
+
             is LinkExit -> {
                 jsNativeInterface?.callOnAndroidSuccess(
                     metadata = plaidResult.error?.errorJson,
                 )
             }
+
             else -> throw IllegalStateException("Unexpected result $plaidResult")
         }
     }
@@ -157,13 +161,14 @@ fun PavilionPlaidWebView(
  * @return A WebView set up with the specified parameters.
  */
 private fun setupWebView(
-    url: String,
-    redirectUrl: String,
-    context: Context,
-    onLinkTokenStateChange: (String) -> Unit,
-    onLoadingChange: (Boolean) -> Unit,
-    onJsNativeInterfaceChange: (JavaScriptInterface?) -> Unit,
-    onClose: () -> Unit,
+        url: String,
+        redirectUrl: String,
+        context: Context,
+        onLinkTokenStateChange: (String) -> Unit,
+        onLoadingChange: (Boolean) -> Unit,
+        onJsNativeInterfaceChange: (JavaScriptInterface?) -> Unit,
+        onFullScreenRequested: () -> Unit,
+        onClose: () -> Unit,
 ) = WebView(context).apply {
     webViewClient = object : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -172,13 +177,13 @@ private fun setupWebView(
                     context.startActivity(Intent(Intent.ACTION_DIAL, request.url))
                     return true
                 }
-                
+
                 val comparisonUri = java.net.URI(redirectUrl)
                 !(
-                    request.url.scheme == comparisonUri.scheme &&
-                        request.url.host == comparisonUri.host &&
-                        request.url.path == comparisonUri.path
-                    )
+                        request.url.scheme == comparisonUri.scheme &&
+                                request.url.host == comparisonUri.host &&
+                                request.url.path == comparisonUri.path
+                        )
             } ?: true
         }
 
@@ -198,7 +203,7 @@ private fun setupWebView(
         override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message?): Boolean {
             val popup = WebView(context)
             view?.addView(popup)
-            (resultMsg?.obj as? WebViewTransport)?.webView = popup
+            (resultMsg?.obj as? WebView.WebViewTransport)?.webView = popup
             resultMsg?.sendToTarget()
             return true
         }
@@ -211,9 +216,8 @@ private fun setupWebView(
 
     val jsNativeInterface = JavaScriptInterface(
         webView = this,
-        tokenHandler = { token, successCallback, errorCallBack ->
-            onLinkTokenStateChange(token)
-        },
+        tokenHandler = onLinkTokenStateChange,
+        fullScreenHandler = onFullScreenRequested,
         closeHandler = {
             onLinkTokenStateChange("")
             onClose()

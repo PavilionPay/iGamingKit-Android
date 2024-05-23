@@ -14,9 +14,10 @@ import android.webkit.WebView
  * @param closeHandler A function to handle close events.
  */
 internal class JavaScriptInterface(
-    private val webView: WebView,
-    private val tokenHandler: (String, String, String) -> Unit,
-    private val closeHandler: () -> Unit,
+        private val webView: WebView,
+        private val tokenHandler: (String) -> Unit,
+        private val fullScreenHandler: () -> Unit,
+        private val closeHandler: () -> Unit,
 ) {
     /**
      * This functions triggers the onAndroidSuccess function in the WebView to indicate the Plaid process has completed. The metadata
@@ -37,6 +38,10 @@ internal class JavaScriptInterface(
             webView.context.findActivity()?.runOnUiThread {
                 closeHandler()
             }
+        } else if (payload == "opensdk") {
+            webView.context.findActivity()?.runOnUiThread {
+                fullScreenHandler()
+            }
         }
     }
 
@@ -44,12 +49,10 @@ internal class JavaScriptInterface(
      * A function to handle token events. This is called from JavaScript within in the WebView to set the linkToken.
      *
      * @param linkToken The link token.
-     * @param successCallback The name of the success callback function.
-     * @param errorCallback The name of the error callback function.
      */
     @JavascriptInterface
-    fun openLinkNative(linkToken: String, successCallback: String, errorCallback: String) {
-        tokenHandler(linkToken, successCallback, errorCallback)
+    fun openLinkNative(linkToken: String) {
+        tokenHandler(linkToken)
     }
 }
 

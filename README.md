@@ -20,7 +20,7 @@ Follow the steps outlined in the [Operator Setup](https://ausenapccde03.azureedg
 Add the following to your app's dependencies in the build.gradle.kts file:
 
 ```
-  implementation("com.github.PavilionPay:iGamingKit-Android:0.0.8")
+  implementation("com.github.PavilionPay:iGamingKit-Android:0.0.9")
 ```
 Add the JitPack repository to your build file
 ```
